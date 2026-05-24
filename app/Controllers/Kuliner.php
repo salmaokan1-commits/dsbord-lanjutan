@@ -56,4 +56,226 @@ class Kuliner extends BaseController
 
         return redirect()->to('/kuliner');
     }
+
+    /**
+     * Method untuk menambah tempat makan melalui AJAX (dari modal form)
+     */
+    public function tambah()
+    {
+        // Validasi: hanya admin yang bisa menambah
+        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Hanya admin yang bisa menambah tempat.'
+            ])->setStatusCode(403);
+        }
+
+        $model = new KulinerModel();
+        
+        // Validasi file foto
+        $fileFoto = $this->request->getFile('foto');
+        $namaFoto = null;
+
+        if ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
+            // Cek ukuran file (maksimal 5MB)
+            if ($fileFoto->getSize() > 5 * 1024 * 1024) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ukuran file terlalu besar. Maksimal 5MB.'
+                ]);
+            }
+
+            $namaFoto = $fileFoto->getRandomName();
+            $fileFoto->move(ROOTPATH . 'public/img', $namaFoto);
+        } else {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Foto harus diupload.'
+            ]);
+        }
+
+        try {
+            // Ambil dan validasi data dari form
+            $data = [
+                'nama_tempat'      => $this->request->getPost('nama_tempat'),
+                'kategori'         => $this->request->getPost('kategori'),
+                'rating'           => $this->request->getPost('rating'),
+                'latitude'         => (float) $this->request->getPost('latitude'),
+                'longitude'        => (float) $this->request->getPost('longitude'),
+                'alamat_lengkap'   => $this->request->getPost('alamat_lengkap'),
+                'jam_operasional'  => $this->request->getPost('jam_operasional'),
+                'no_telp'          => $this->request->getPost('no_telp'),
+                'harga_rata_rata'  => (int) $this->request->getPost('harga_rata_rata'),
+                'foto'             => $namaFoto,
+            ];
+
+            // Insert ke database
+            if ($model->insert($data)) {
+                $lastId = $model->insertID();
+                
+                // Ambil data yang baru ditambahkan
+                $tempatBaru = $model->find($lastId);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Tempat makan berhasil ditambahkan!',
+                    'tempat' => $tempatBaru
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan ke database.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
+
+    /**
+     * Method untuk update tempat makan melalui AJAX
+     */
+    public function update()
+    {
+        // Validasi: hanya admin yang bisa update
+        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Hanya admin yang bisa edit tempat.'
+            ])->setStatusCode(403);
+        }
+
+        $model = new KulinerModel();
+        $id = $this->request->getPost('id');
+
+        // Validasi ID
+        if (!$id || !$model->find($id)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ])->setStatusCode(404);
+        }
+
+        try {
+            $dataLama = $model->find($id);
+            $namaFoto = $dataLama['foto']; // Default: foto lama
+
+            // Validasi dan proses file foto jika ada yang baru
+            $fileFoto = $this->request->getFile('foto');
+            if ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
+                // Cek ukuran file (maksimal 5MB)
+                if ($fileFoto->getSize() > 5 * 1024 * 1024) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Ukuran file terlalu besar. Maksimal 5MB.'
+                    ]);
+                }
+
+                // Hapus foto lama
+                $fotoLamaPath = ROOTPATH . 'public/img/' . $dataLama['foto'];
+                if (file_exists($fotoLamaPath)) {
+                    unlink($fotoLamaPath);
+                }
+
+                // Upload foto baru
+                $namaFoto = $fileFoto->getRandomName();
+                $fileFoto->move(ROOTPATH . 'public/img', $namaFoto);
+            }
+
+            // Ambil data untuk update
+            $data = [
+                'nama_tempat'      => $this->request->getPost('nama_tempat'),
+                'kategori'         => $this->request->getPost('kategori'),
+                'rating'           => $this->request->getPost('rating'),
+                'latitude'         => (float) $this->request->getPost('latitude'),
+                'longitude'        => (float) $this->request->getPost('longitude'),
+                'alamat_lengkap'   => $this->request->getPost('alamat_lengkap'),
+                'jam_operasional'  => $this->request->getPost('jam_operasional'),
+                'no_telp'          => $this->request->getPost('no_telp'),
+                'harga_rata_rata'  => (int) $this->request->getPost('harga_rata_rata'),
+                'foto'             => $namaFoto,
+            ];
+
+            // Update database
+            if ($model->update($id, $data)) {
+                $tempatUpdate = $model->find($id);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Tempat makan berhasil diupdate!',
+                    'tempat' => $tempatUpdate
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal mengupdate database.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
+
+    /**
+     * Method untuk delete tempat makan melalui AJAX
+     */
+    public function delete()
+    {
+        // Validasi: hanya admin yang bisa delete
+        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Hanya admin yang bisa hapus tempat.'
+            ])->setStatusCode(403);
+        }
+
+        $model = new KulinerModel();
+        $id = $this->request->getPost('id');
+
+        // Validasi ID
+        if (!$id || !$model->find($id)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ])->setStatusCode(404);
+        }
+
+        try {
+            $data = $model->find($id);
+
+            // Hapus foto dari server
+            $fotoPath = ROOTPATH . 'public/img/' . $data['foto'];
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+
+            // Hapus dari database
+            if ($model->delete($id)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Tempat makan berhasil dihapus!',
+                    'id' => $id,
+                    'foto' => $data['foto'],
+                    'latitude' => $data['latitude'],
+                    'longitude' => $data['longitude']
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menghapus dari database.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
 }

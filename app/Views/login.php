@@ -6,12 +6,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { margin: 0; height: 100vh; background: url('<?= base_url('img/bg.jpg') ?>') no-repeat center center; background-size: cover; display: flex; justify-content: center; align-items: center; }
-        .overlay { backdrop-filter: blur(6px); background: rgba(255,255,255,0.6); padding: 30px; border-radius: 20px; width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .overlay { backdrop-filter: blur(6px); background: rgba(255, 255, 255, 0.5); padding: 30px; border-radius: 20px; width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .title { text-align: center; color: #FF5722; font-weight: bold; margin-bottom: 20px; }
         .form-control { border-radius: 10px; padding-left: 15px; }
-        .btn-orange { background: #FF5722; color: white; border-radius: 10px; border: none; padding: 10px; }
+        .btn-orange { background: #FF5722; color: white; border-radius: 6px; border: none; padding: 7px; }
         .btn-orange:hover { background: #e64a19; color: white; }
-        .role-toggle span { padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+        .role-toggle span { padding: 2px 8px; border-radius: 8px; cursor: pointer; }
         .active-role { background: #FF5722; color: white; }
     </style>
 </head>
