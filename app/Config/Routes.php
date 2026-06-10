@@ -1,6 +1,7 @@
 <?php
 
 use CodeIgniter\Router\RouteCollection;
+use Dompdf\Dompdf;
 
 /**
  * @var RouteCollection $routes
@@ -15,8 +16,12 @@ $routes->get('/', function() {
 $routes->get('/login', 'Auth::login');
 $routes->post('/login/processLogin', 'Auth::processLogin');
 $routes->get('/logout', 'Auth::logout');
+$routes->get('/auth/daftar', 'Auth::daftar');
+$routes->post('/auth/prosesDaftar', 'Auth::prosesDaftar');
 $routes->get('/auth/google', 'Auth::googleLogin');
 $routes->get('/auth/googleCallback', 'Auth::googleCallback');
+$routes->get('/auth/googleRoleSelect', 'Auth::googleRoleSelect');
+$routes->post('/auth/prosesgoogleRole', 'Auth::prosesgoogleRole');
 $routes->get('/kuliner', 'Kuliner::index');
 $routes->post('/kuliner/tambah', 'Kuliner::tambah');
 $routes->post('/kuliner/update', 'Kuliner::update');
@@ -37,3 +42,6 @@ $routes->get('auth/googleCallback', 'Auth::googleCallback');
 // Route tambahan agar rapi
 $routes->get('login', 'Auth::login');
 $routes->get('logout', 'Auth::logout');
+
+//domppdf
+$routes->get('download', 'Domppdf::index');

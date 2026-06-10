@@ -11,8 +11,6 @@
         .form-control { border-radius: 10px; padding-left: 15px; }
         .btn-orange { background: #FF5722; color: white; border-radius: 6px; border: none; padding: 7px; }
         .btn-orange:hover { background: #e64a19; color: white; }
-        .role-toggle span { padding: 2px 8px; border-radius: 8px; cursor: pointer; }
-        .active-role { background: #FF5722; color: white; }
     </style>
 </head>
 <body>
@@ -39,19 +37,14 @@
             <span onclick="togglePassword()" style="position:absolute; right:10px; top:8px; cursor:pointer;"></span>
         </div>
 
-        <div class="text-center mb-3 role-toggle" style="font-size: 14px;">
-            Masuk sebagai:<br>
-            <span id="userRole" class="active-role" onclick="setRole('user')">User</span> | 
-            <span id="adminRole" onclick="setRole('admin')">Admin</span>
-            <input type="hidden" name="role" id="role" value="user">
-        </div>
-
         <button type="submit" class="btn btn-orange w-100">Masuk</button>
 
         <a href="<?= base_url('auth/googleLogin') ?>" class="btn w-100 mt-3 d-flex align-items-center justify-content-center gap-2" style="background:#fff; border:1px solid #ddd; border-radius: 10px;">
             <img src="https://developers.google.com/identity/images/g-logo.png" width="20">
             <span style="color:#444; font-weight:500;">Masuk dengan Google</span>
         </a>
+
+        <a href="<?= base_url('auth/daftar') ?>" class="btn btn-orange w-100 mt-3">Daftar Akun Baru</a>
     </form>
 
     <div class="text-center mt-3">
@@ -63,11 +56,6 @@
 function togglePassword() {
     let x = document.getElementById("password");
     x.type = x.type === "password" ? "text" : "password";
-}
-function setRole(role) {
-    document.getElementById("role").value = role;
-    document.getElementById("userRole").classList.toggle("active-role", role === 'user');
-    document.getElementById("adminRole").classList.toggle("active-role", role === 'admin');
 }
 </script>
 </body>

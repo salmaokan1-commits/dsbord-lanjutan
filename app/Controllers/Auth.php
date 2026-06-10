@@ -26,8 +26,13 @@ class Auth extends BaseController
                       ->orWhere('username', $login)
                       ->first();
 
+        // Jika user tidak ditemukan
+        if (!$user) {
+            return redirect()->back()->with('error', 'Username atau email tidak ditemukan, silahkan klik DAFTAR AKUN BARU');
+        }
+
         // Melakukan verifikasi password yang diinput dengan hash di database
-        if ($user && password_verify($password, $user['password'])) {
+        if (password_verify($password, $user['password'])) {
             $session->set([
                 'id'        => $user['id'],
                 'nama'      => $user['nama'],
@@ -38,14 +43,54 @@ class Auth extends BaseController
             return redirect()->to('/kuliner'); // Berhasil login, masuk ke dashboard
         }
 
-        // Jika gagal, kembali ke halaman login dengan pesan error
-        return redirect()->back()->with('error', 'Email/Username atau password salah');
+        // Jika password salah
+        return redirect()->back()->with('error', 'Password salah');
     }
 
     public function logout()
     {
         session()->destroy();
         return redirect()->to('/login');
+    }
+
+    public function daftar()
+    {
+        return view('daftar_akun');
+    }
+
+    public function prosesDaftar()
+    {
+        $model = new UserModel();
+        $email = $this->request->getPost('email');
+        $username = $this->request->getPost('username');
+        $password = $this->request->getPost('password');
+        $role = $this->request->getPost('role');
+
+        // Validasi password minimal 4 karakter
+        if (strlen($password) < 4) {
+            return redirect()->back()->with('error', 'Password minimal 4 karakter');
+        }
+
+        // Cek apakah email atau username sudah terdaftar
+        $existingUser = $model->where('email', $email)->orWhere('username', $username)->first();
+        if ($existingUser) {
+            return redirect()->back()->with('error', 'Email atau username sudah terdaftar');
+        }
+
+        // Insert user baru
+        $data = [
+            'nama'     => $username,
+            'username' => $username,
+            'email'    => $email,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'role'     => $role
+        ];
+
+        if ($model->insert($data)) {
+            return redirect()->to('/login')->with('success', 'Akun berhasil dibuat. Silahkan login');
+        } else {
+            return redirect()->back()->with('error', 'Gagal membuat akun');
+        }
     }
 
     public function googleLogin()
@@ -80,17 +125,17 @@ class Auth extends BaseController
         $model = new UserModel();
         $user = $model->where('email', $data->email)->first();
 
-        // Jika user Google belum ada di database, otomatis registrasi
+        // Jika user Google belum ada di database, tampilkan form pilih role
         if (!$user) {
-            $model->insert([
-                'nama'      => $data->name,
-                'username'  => explode('@', $data->email)[0],
-                'email'     => $data->email,
-                'password'  => password_hash(uniqid(), PASSWORD_DEFAULT),
-                'role'      => 'user',
-                'google_id' => $data->id 
+            session()->set([
+                'google_data' => [
+                    'name'      => $data->name,
+                    'email'     => $data->email,
+                    'username'  => explode('@', $data->email)[0],
+                    'google_id' => $data->id
+                ]
             ]);
-            $user = $model->where('email', $data->email)->first();
+            return redirect()->to('/auth/googleRoleSelect');
         }
 
         session()->set([
@@ -101,5 +146,47 @@ class Auth extends BaseController
         ]);
 
         return redirect()->to('/kuliner');
+    }
+
+    public function googleRoleSelect()
+    {
+        if (!session()->get('google_data')) {
+            return redirect()->to('/login');
+        }
+        return view('google_role_select');
+    }
+
+    public function prosesgoogleRole()
+    {
+        $googleData = session()->get('google_data');
+        if (!$googleData) {
+            return redirect()->to('/login');
+        }
+
+        $role = $this->request->getPost('role');
+        $model = new UserModel();
+
+        $data = [
+            'nama'      => $googleData['name'],
+            'username'  => $googleData['username'],
+            'email'     => $googleData['email'],
+            'password'  => password_hash(uniqid(), PASSWORD_DEFAULT),
+            'role'      => $role,
+            'google_id' => $googleData['google_id']
+        ];
+
+        if ($model->insert($data)) {
+            $user = $model->where('email', $googleData['email'])->first();
+            session()->set([
+                'id'        => $user['id'],
+                'nama'      => $user['nama'],
+                'role'      => $user['role'],
+                'logged_in' => true
+            ]);
+            session()->remove('google_data');
+            return redirect()->to('/kuliner');
+        } else {
+            return redirect()->to('/login')->with('error', 'Gagal membuat akun');
+        }
     }
 }

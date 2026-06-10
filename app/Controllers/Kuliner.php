@@ -62,16 +62,17 @@ class Kuliner extends BaseController
      */
     public function tambah()
     {
-        // Validasi: hanya admin yang bisa menambah
-        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+        // Validasi: hanya developer dan merchant yang bisa menambah
+        $role = session()->get('role');
+        if (!session()->get('logged_in') || ($role !== 'developer' && $role !== 'merchant')) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya admin yang bisa menambah tempat.'
+                'message' => 'Akses ditolak. Hanya developer dan merchant yang bisa menambah tempat.'
             ])->setStatusCode(403);
         }
 
         $model = new KulinerModel();
-        
+
         // Validasi file foto
         $fileFoto = $this->request->getFile('foto');
         $namaFoto = null;
@@ -107,12 +108,13 @@ class Kuliner extends BaseController
                 'no_telp'          => $this->request->getPost('no_telp'),
                 'harga_rata_rata'  => (int) $this->request->getPost('harga_rata_rata'),
                 'foto'             => $namaFoto,
+                'created_by'       => session()->get('id')
             ];
 
             // Insert ke database
             if ($model->insert($data)) {
                 $lastId = $model->insertID();
-                
+
                 // Ambil data yang baru ditambahkan
                 $tempatBaru = $model->find($lastId);
 
@@ -140,11 +142,12 @@ class Kuliner extends BaseController
      */
     public function update()
     {
-        // Validasi: hanya admin yang bisa update
-        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+        // Validasi: hanya developer dan merchant yang bisa update
+        $role = session()->get('role');
+        if (!session()->get('logged_in') || ($role !== 'developer' && $role !== 'merchant')) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya admin yang bisa edit tempat.'
+                'message' => 'Akses ditolak. Hanya developer dan merchant yang bisa edit tempat.'
             ])->setStatusCode(403);
         }
 
@@ -161,6 +164,15 @@ class Kuliner extends BaseController
 
         try {
             $dataLama = $model->find($id);
+
+            // Validasi ownership untuk merchant
+            if ($role === 'merchant' && (int)$dataLama['created_by'] !== (int)session()->get('id')) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Pilih tempat makan yang kamu kelolah'
+                ])->setStatusCode(403);
+            }
+
             $namaFoto = $dataLama['foto']; // Default: foto lama
 
             // Validasi dan proses file foto jika ada yang baru
@@ -227,11 +239,12 @@ class Kuliner extends BaseController
      */
     public function delete()
     {
-        // Validasi: hanya admin yang bisa delete
-        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+        // Validasi: hanya developer dan merchant yang bisa delete
+        $role = session()->get('role');
+        if (!session()->get('logged_in') || ($role !== 'developer' && $role !== 'merchant')) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya admin yang bisa hapus tempat.'
+                'message' => 'Akses ditolak. Hanya developer dan merchant yang bisa hapus tempat.'
             ])->setStatusCode(403);
         }
 
@@ -248,6 +261,14 @@ class Kuliner extends BaseController
 
         try {
             $data = $model->find($id);
+
+            // Validasi ownership untuk merchant
+            if ($role === 'merchant' && (int)$data['created_by'] !== (int)session()->get('id')) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Pilih tempat makan yang kamu kelolah'
+                ])->setStatusCode(403);
+            }
 
             // Hapus foto dari server
             $fotoPath = ROOTPATH . 'public/img/' . $data['foto'];

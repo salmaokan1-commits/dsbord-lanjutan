@@ -11,9 +11,9 @@ class KulinerModel extends Model
 
     // Field yang boleh diisi (sesuai dengan kolom di phpMyAdmin tadi)
     protected $allowedFields = [
-        'nama_tempat', 'foto', 'rating', 'alamat_lengkap', 
-        'jam_operasional', 'no_telp', 'kategori', 
-        'harga_rata_rata', 'latitude', 'longitude'
+        'nama_tempat', 'foto', 'rating', 'alamat_lengkap',
+        'jam_operasional', 'no_telp', 'kategori',
+        'harga_rata_rata', 'latitude', 'longitude', 'created_by'
     ];
 
     // Otomatis mengelola created_at dan updated_at

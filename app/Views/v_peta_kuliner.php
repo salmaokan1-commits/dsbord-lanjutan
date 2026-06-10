@@ -1062,13 +1062,13 @@
     <!-- BAGIAN SIDEBAR YANG SUDAH DIRAPIKAN -->
 <div class="sidebar">
     <div class="sidebar-actions">
-        <?php if(session()->get('role') === 'admin'): ?>
+        <?php if(session()->get('role') === 'developer' || session()->get('role') === 'merchant'): ?>
         <button id="btn-tambah-tempat" type="button" class="btn-sidebar-primary">
             Tambah Tempat
         </button>
         <?php endif; ?>
 
-        <?php if(session()->get('role') === 'admin'): ?>
+        <?php if(session()->get('role') === 'developer' || session()->get('role') === 'merchant'): ?>
         <button id="btn-edit-mode" type="button" class="btn-sidebar-secondary">
             Edit Tempat
         </button>
@@ -1083,7 +1083,7 @@
     <!-- Div inilah yang akan memiliki fungsi scroll -->
     <div id="list-kuliner">
         <?php foreach($kuliner ?? [] as $k): ?>
-            <div class="card" data-id="<?= $k['id'] ?>" data-kategori="<?= $k['kategori'] ?>" data-lat="<?= $k['latitude'] ?>" data-lng="<?= $k['longitude'] ?>" data-rating="<?= $k['rating'] === 'Belum Dirating' ? 0 : floatval($k['rating']) ?>" data-harga="<?= isset($k['harga_rata_rata']) ? intval($k['harga_rata_rata']) : 0 ?>">
+            <div class="card" data-id="<?= $k['id'] ?>" data-kategori="<?= $k['kategori'] ?>" data-lat="<?= $k['latitude'] ?>" data-lng="<?= $k['longitude'] ?>" data-rating="<?= $k['rating'] === 'Belum Dirating' ? 0 : floatval($k['rating']) ?>" data-harga="<?= isset($k['harga_rata_rata']) ? intval($k['harga_rata_rata']) : 0 ?>" data-created-by="<?= $k['created_by'] ?? null ?>">
                 <img src="<?= base_url('img/' . $k['foto']) ?>" alt="<?= $k['nama_tempat'] ?>">
                 <div class="card-info">
                     <h4 style="margin: 2px 0; font-size: 14px;"><?= $k['nama_tempat'] ?></h4>
@@ -1590,6 +1590,8 @@
     let activeDeleteCard = null;
     let pendingMapMarker = null;
     let editPlaceId = null;
+    const currentUserRole = '<?= session()->get('role') ?>';
+    const currentUserId = <?= session()->get('id') ?>;
 
     const btnTambahTempat = document.getElementById('btn-tambah-tempat');
     const btnEditMode = document.getElementById('btn-edit-mode');
@@ -1697,10 +1699,28 @@
     }
 
     function openEditPlace(card) {
+        if (currentUserRole === 'merchant') {
+            const createdByAttr = card.getAttribute('data-created-by');
+            const createdBy = createdByAttr ? parseInt(createdByAttr) : null;
+            if (createdBy === null || createdBy !== currentUserId) {
+                showSearchAlert('Pilih tempat makan yang kamu kelolah');
+                editActionMode = null;
+                return;
+            }
+        }
         openTambahTempatForm(true, null, card);
     }
 
     function openDeleteConfirmForCard(card) {
+        if (currentUserRole === 'merchant') {
+            const createdByAttr = card.getAttribute('data-created-by');
+            const createdBy = createdByAttr ? parseInt(createdByAttr) : null;
+            if (createdBy === null || createdBy !== currentUserId) {
+                showSearchAlert('Pilih tempat makan yang kamu kelolah');
+                editActionMode = null;
+                return;
+            }
+        }
         activeDeleteCard = card;
         modalConfirmDelete.classList.add('active');
     }
