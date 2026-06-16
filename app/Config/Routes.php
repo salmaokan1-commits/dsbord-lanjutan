@@ -29,6 +29,10 @@ $routes->post('/kuliner/delete', 'Kuliner::delete');
 $routes->post('/pesanan/simpan', 'Pesanan::simpan');
 $routes->get('/pesanan/daftar', 'Pesanan::daftar');
 $routes->get('/pesanan/hapus/(:num)', 'Pesanan::hapus/$1');
+$routes->post('/pesanan/complete/(:num)', 'Pesanan::complete/$1');
+$routes->post('/withdrawal/request', 'Pesanan::requestWithdrawal');
+$routes->post('/withdrawal/approve/(:num)', 'Pesanan::approveWithdrawal/$1');
+$routes->post('/withdrawal/reject/(:num)', 'Pesanan::rejectWithdrawal/$1');
 
 // HOME (WAJIB LOGIN)
 $routes->get('/home', 'Home::index', ['filter' => 'auth']);
